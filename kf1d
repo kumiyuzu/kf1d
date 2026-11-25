@@ -2,18 +2,59 @@
 # SPDX-FileCopyrightText: 2026 Yuzuki KUMITA
 # SPDX-License-Identifier: BSD-3-Clause
 
+import argparse
+import math
 import sys
 
 
-def main():
-    q = 0.01
-    r = 1.0
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="1D Kalman filter for noisy sensor data stream."
+    )
+    parser.add_argument(
+        "-q",
+        type=float,
+        default=0.01,
+        help="process noise variance Q >= 0 (default: 0.01)",
+    )
+    parser.add_argument(
+        "-r",
+        type=float,
+        default=1.0,
+        help="measurement noise variance R > 0 (default: 1.0)",
+    )
+    return parser.parse_args()
 
+
+def main():
+    args = parse_args()
+
+    if math.isnan(args.q) or math.isinf(args.q) or args.q < 0.0:
+        sys.stderr.write("Error: -q must be a finite number >= 0\n")
+        sys.exit(1)
+
+    if math.isnan(args.r) or math.isinf(args.r) or args.r <= 0.0:
+        sys.stderr.write("Error: -r must be a finite number > 0\n")
+        sys.exit(1)
+
+    q = args.q
+    r = args.r
     x = None
     p = r
+    count = 0
 
     for line in sys.stdin:
-        z = float(line.strip())
+        stripped = line.strip()
+        if not stripped:
+            sys.stderr.write("Error: empty line in input\n")
+            sys.exit(1)
+        try:
+            z = float(stripped)
+            if math.isnan(z) or math.isinf(z):
+                raise ValueError
+        except ValueError:
+            sys.stderr.write(f"Error: invalid number '{stripped}'\n")
+            sys.exit(1)
 
         if x is None:
             x = z
@@ -24,6 +65,11 @@ def main():
             p = (1.0 - k) * p_pred
 
         print(x)
+        count += 1
+
+    if count == 0:
+        sys.stderr.write("Error: no input data\n")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
