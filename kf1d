@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+# SPDX-FileCopyrightText: 2026 Yuzuki KUMITA
+# SPDX-License-Identifier: BSD-3-Clause
+
+import sys
+
+
+def main():
+    q = 0.01
+    r = 1.0
+
+    x = None
+    p = r
+
+    for line in sys.stdin:
+        z = float(line.strip())
+
+        if x is None:
+            x = z
+        else:
+            p_pred = p + q
+            k = p_pred / (p_pred + r)
+            x = x + k * (z - x)
+            p = (1.0 - k) * p_pred
+
+        print(x)
+
+
+if __name__ == "__main__":
+    main()
